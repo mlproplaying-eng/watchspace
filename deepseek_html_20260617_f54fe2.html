@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>WatchSpace</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0a0e1a; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; }
+        .app { max-width: 390px; width: 100%; height: 100vh; max-height: 844px; background: #0a0e1a; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 8px; background: rgba(10,14,26,0.95); border-bottom: 1px solid rgba(255,255,255,0.04); flex-shrink: 0; z-index: 10; }
+        .header .logo { font-size: 20px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .header .logo .icon { width: 32px; height: 32px; background: linear-gradient(135deg, #4a7cf7, #6c5ce7); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .header .logo span { background: linear-gradient(135deg, #4a7cf7, #6c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header .points { background: rgba(74,124,247,0.12); padding: 4px 14px; border-radius: 30px; color: #7a9cff; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 4px; }
+        .header .back { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); color: #a8b9d9; padding: 6px 14px; border-radius: 30px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        
+        .content { flex: 1; overflow-y: auto; padding: 0 12px 70px; }
+        .content::-webkit-scrollbar { width: 0; }
+
+        /* ===== КНОПКА РЕКЛАМЫ ===== */
+        .ad-btn-full {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ffd700, #f0c000);
+            border: none;
+            border-radius: 16px;
+            color: #0a0e1a;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 12px 0;
+            box-shadow: 0 4px 16px rgba(255,215,0,0.2);
+            transition: all 0.2s ease;
+        }
+        .ad-btn-full:active { transform: scale(0.97); }
+        .ad-btn-full:disabled { opacity: 0.5; }
+
+        .player-wrapper { background: #000; border-radius: 16px; overflow: hidden; margin: 12px 0; aspect-ratio: 16/9; position: relative; }
+        .player-wrapper iframe { width: 100%; height: 100%; border: none; }
+        .player-wrapper .placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a2a4a, #0a0e1a); color: #5a6f95; gap: 12px; text-align: center; padding: 20px; }
+        .player-wrapper .placeholder .big-icon { font-size: 48px; opacity: 0.4; }
+        .player-wrapper .placeholder h4 { color: #a8c0ee; font-size: 16px; }
+
+        .video-title { color: #fff; font-size: 17px; font-weight: 600; margin-top: 8px; }
+        .video-meta { color: #5a6f95; font-size: 13px; margin-top: 4px; }
+
+        .input-row { display: flex; gap: 8px; margin: 8px 0; }
+        .input-row input { flex: 1; padding: 12px 16px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.04); color: #fff; font-size: 14px; outline: none; }
+        .input-row input::placeholder { color: #5a6f95; }
+        .input-row input:focus { border-color: #4a7cf7; }
+        .input-row button { padding: 12px 20px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .input-row .btn-add { background: linear-gradient(135deg, #4a7cf7, #6c5ce7); color: white; }
+        .input-row .btn-youtube { background: #ff0000; color: white; }
+
+        .section { margin-top: 16px; }
+        .section-title { color: #fff; font-size: 16px; font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .section-title .see-all { color: #5a6f95; font-size: 12px; cursor: pointer; }
+
+        .room-card { background: rgba(18,26,48,0.6); border-radius: 14px; padding: 14px; border: 1px solid rgba(255,255,255,0.04); margin-bottom: 8px; }
+        .room-card .top { display: flex; justify-content: space-between; align-items: center; }
+        .room-card .top .name { color: #fff; font-weight: 600; font-size: 15px; }
+        .room-card .top .badge { font-size: 10px; padding: 2px 12px; border-radius: 30px; font-weight: 600; }
+        .room-card .top .badge.open { background: rgba(46,204,113,0.15); color: #2ecc71; }
+        .room-card .top .badge.closed { background: rgba(231,76,60,0.15); color: #e74c3c; }
+        .room-card .members { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+        .room-card .members .member { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #2a3d66, #1a2a4a); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #a8c0ee; border: 2px solid #0a0e1a; }
+        .room-card .members .member.online { border-color: #2ecc71; }
+        .room-card .members .member.creator { border-color: #ffd700; }
+        .room-card .actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .room-card .actions button { padding: 6px 16px; border-radius: 30px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .room-card .actions .join { background: linear-gradient(135deg, #4a7cf7, #6c5ce7); color: white; }
+        .room-card .actions .invite { background: rgba(255,255,255,0.05); color: #a8b9d9; border: 1px solid rgba(255,255,255,0.06); }
+        .room-card .actions .enter { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
+
+        .create-room-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        .create-room-modal .modal {
+            background: #1a2a4a;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 340px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .create-room-modal .modal h3 { color: #fff; font-size: 18px; margin-bottom: 12px; }
+        .create-room-modal .modal input, .create-room-modal .modal select {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        .create-room-modal .modal input::placeholder { color: #5a6f95; }
+        .create-room-modal .modal input:focus, .create-room-modal .modal select:focus { border-color: #4a7cf7; }
+        .create-room-modal .modal select option { background: #1a2a4a; color: #fff; }
+        .create-room-modal .modal .btns { display: flex; gap: 10px; margin-top: 12px; }
+        .create-room-modal .modal .btns button { flex: 1; padding: 10px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; }
+        .create-room-modal .modal .btns .cancel { background: rgba(255,255,255,0.05); color: #5a6f95; }
+        .create-room-modal .modal .btns .create { background: linear-gradient(135deg, #4a7cf7, #6c5ce7); color: white; }
+
+        .room-inside { padding: 4px 0; }
+        .room-inside .room-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .room-inside .room-header h2 { color: #fff; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        .room-inside .room-header .online-count { color: #5a6f95; font-size: 13px; }
+        .room-inside .member-list { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .room-inside .member-list .m { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); padding: 4px 12px 4px 4px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.04); }
+        .room-inside .member-list .m .av { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #2a3d66, #1a2a4a); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #a8c0ee; }
+        .room-inside .member-list .m .av.online { border: 2px solid #2ecc71; }
+        .room-inside .member-list .m .av.creator { border: 2px solid #ffd700; }
+        .room-inside .member-list .m .name { color: #a8b9d9; font-size: 12px; }
+        .room-inside .member-list .m .crown { color: #ffd700; font-size: 12px; }
+        .room-inside .chat-area { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 12px; max-height: 120px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.03); }
+        .room-inside .chat-area .msg { margin-bottom: 4px; }
+        .room-inside .chat-area .msg .user { color: #7a9cff; font-weight: 600; font-size: 12px; }
+        .room-inside .chat-area .msg .text { color: #e0e8f8; font-size: 13px; }
+        .room-inside .chat-area .msg .time { color: #5a6f95; font-size: 10px; margin-left: 6px; }
+        .room-inside .chat-input { display: flex; gap: 8px; margin-top: 8px; }
+        .room-inside .chat-input input { flex: 1; padding: 8px 14px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.04); color: #fff; font-size: 13px; outline: none; }
+        .room-inside .chat-input input::placeholder { color: #5a6f95; }
+        .room-inside .chat-input button { padding: 8px 16px; border-radius: 30px; border: none; background: linear-gradient(135deg, #4a7cf7, #6c5ce7); color: white; font-weight: 600; cursor: pointer; }
+
+        .btn-row { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+        .btn-row .btn { flex: 1; min-width: 80px; padding: 10px; border-radius: 30px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; text-align: center; }
+        .btn-row .btn-youtube { background: #ff0000; color: white; }
+        .btn-row .btn-clear { background: rgba(255,255,255,0.05); color: #5a6f95; border: 1px solid rgba(255,255,255,0.06); }
+        .btn-row .btn-create { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
+
+        .friends-list { display: flex; flex-direction: column; gap: 8px; }
+        .friend-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(18,26,48,0.6); border-radius: 14px; border: 1px solid rgba(255,255,255,0.04); }
+        .friend-item .avatar { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #2a3d66, #1a2a4a); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: #a8c0ee; flex-shrink: 0; position: relative; }
+        .friend-item .avatar .online { position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; background: #2ecc71; border-radius: 50%; border: 2px solid #0a0e1a; }
+        .friend-item .avatar .offline { position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; background: #5a6f95; border-radius: 50%; border: 2px solid #0a0e1a; }
+        .friend-item .info { flex: 1; }
+        .friend-item .info .name { color: #fff; font-weight: 600; font-size: 14px; }
+        .friend-item .info .status { color: #5a6f95; font-size: 12px; }
+        .friend-item .points-badge { background: rgba(255,215,0,0.08); padding: 2px 12px; border-radius: 30px; color: #ffd700; font-size: 12px; font-weight: 600; }
+
+        .friend-requests { background: rgba(18,26,48,0.6); border-radius: 14px; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.04); }
+        .friend-requests .title { color: #5a6f95; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .friend-request-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 4px; }
+        .friend-request-item .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2a3d66, #1a2a4a); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #a8c0ee; flex-shrink: 0; }
+        .friend-request-item .name { flex: 1; color: #fff; font-size: 14px; font-weight: 500; }
+        .friend-request-item .btns { display: flex; gap: 6px; }
+        .friend-request-item .btns button { padding: 4px 14px; border-radius: 30px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .friend-request-item .btns .accept { background: #2ecc71; color: white; }
+        .friend-request-item .btns .reject { background: rgba(255,255,255,0.05); color: #5a6f95; }
+
+        .profile-card { background: linear-gradient(145deg, rgba(18,26,48,0.8), rgba(10,14,30,0.9)); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .profile-card .avatar { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #4a7cf7, #6c5ce7); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: white; flex-shrink: 0; }
+        .profile-card .info { flex: 1; }
+        .profile-card .info h3 { color: #fff; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .profile-card .info h3 .nick { color: #5a6f95; font-size: 13px; font-weight: 400; }
+        .profile-card .info p { color: #5a6f95; font-size: 13px; }
+        .profile-card .level { background: rgba(255,215,0,0.12); padding: 4px 14px; border-radius: 30px; color: #ffd700; font-size: 13px; font-weight: 600; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .stats-grid .stat { background: rgba(255,255,255,0.03); border-radius: 14px; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.03); }
+        .stats-grid .stat .num { color: #fff; font-size: 18px; font-weight: 700; }
+        .stats-grid .stat .label { color: #5a6f95; font-size: 10px; display: block; margin-top: 2px; }
+
+        .gifts-section { margin: 16px 0; }
+        .gifts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .gift-card { background: rgba(18,26,48,0.6); border-radius: 14px; padding: 16px 8px; text-align: center; border: 1px solid rgba(255,255,255,0.04); }
+        .gift-card .icon { font-size: 32px; }
+        .gift-card .name { color: #fff; font-size: 12px; font-weight: 600; margin-top: 4px; }
+        .gift-card .price { color: #ffd700; font-size: 11px; font-weight: 600; }
+        .gift-card .btn-gift { margin-top: 6px; padding: 4px 16px; border-radius: 30px; border: none; background: linear-gradient(135deg, #4a7cf7, #6c5ce7); color: white; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+        .withdraw-section { background: rgba(18,26,48,0.6); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.04); margin: 12px 0; opacity: 0.6; position: relative; }
+        .withdraw-section .disabled-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 4px;
+            backdrop-filter: blur(2px);
+        }
+        .withdraw-section .disabled-overlay .soon-text { color: #ffd700; font-size: 16px; font-weight: 700; }
+        .withdraw-section .disabled-overlay .soon-sub { color: #5a6f95; font-size: 12px; }
+
+        .games-soon { text-align: center; padding: 60px 20px; background: rgba(18,26,48,0.6); border-radius: 20px; border: 1px solid rgba(255,255,255,0.04); }
+        .games-soon .icon { font-size: 64px; margin-bottom: 12px; opacity: 0.4; }
+        .games-soon h3 { color: #a8c0ee; font-size: 20px; font-weight: 700; }
+        .games-soon p { color: #5a6f95; font-size: 14px; margin-top: 4px; }
+
+        .playlist { margin-top: 8px; }
+        .playlist .title { color: #5a6f95; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .playlist-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(18,26,48,0.6); border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); margin-bottom: 4px; cursor: pointer; transition: all 0.2s ease; }
+        .playlist-item:active { transform: scale(0.97); }
+        .playlist-item .num { color: #5a6f95; font-size: 11px; min-width: 20px; }
+        .playlist-item .info { flex: 1; }
+        .playlist-item .info h4 { color: #fff; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .playlist-item .info .meta { color: #5a6f95; font-size: 10px; }
+        .playlist-item .remove-btn { background: none; border: none; color: #5a6f95; font-size: 14px; cursor: pointer; padding: 4px; }
+        .playlist-item.active { background: rgba(74,124,247,0.08); border-color: rgba(74,124,247,0.15); }
+
+        .activity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .activity-card { background: rgba(18,26,48,0.6); border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: all 0.2s ease; }
+        .activity-card:active { transform: scale(0.97); }
+        .activity-card .thumb { height: 90px; background: linear-gradient(135deg, #1a2a4a, #2a3d66); display: flex; align-items: center; justify-content: center; font-size: 36px; background-size: cover; background-position: center; position: relative; }
+        .activity-card .thumb .duration { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.8); padding: 2px 10px; border-radius: 30px; font-size: 9px; color: #fff; }
+        .activity-card .info { padding: 8px 10px 10px; }
+        .activity-card .info h4 { color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .activity-card .info .watched-by { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .activity-card .info .watched-by .avatars { display: flex; }
+        .activity-card .info .watched-by .avatars .av { width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #2a3d66, #1a2a4a); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; color: #a8c0ee; border: 2px solid #0a0e1a; margin-right: -4px; }
+        .activity-card .info .watched-by .text { color: #5a6f95; font-size: 9px; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #5a6f95; }
+        .empty-state .icon { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
+        .empty-state h4 { color: #a8c0ee; font-size: 16px; margin-bottom: 6px; }
+        .empty-state p { font-size: 13px; line-height: 1.5; }
+
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 8px 14px;
+            background: rgba(10,14,26,0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.04);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border: none;
+            background: none;
+            min-width: 56px;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .nav-item .icon-wrap {
+            width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; position: relative;
+        }
+        .nav-item .icon-wrap .svg-icon { width: 26px; height: 26px; fill: #4a5568; transition: all 0.3s ease; }
+        .nav-item .label { font-size: 10px; color: #4a5568; font-weight: 500; transition: all 0.3s ease; }
+        .nav-item.active .icon-wrap { background: rgba(74,124,247,0.12); }
+        .nav-item.active .icon-wrap .svg-icon { fill: #4a7cf7; }
+        .nav-item.active .label { color: #4a7cf7; }
+        .nav-item .badge { position: absolute; top: 0; right: 0; background: #e74c3c; color: white; font-size: 9px; font-weight: 700; padding: 1px 8px; border-radius: 30px; min-width: 18px; text-align: center; }
+        .nav-item:active { transform: scale(0.92); }
+        .bottom-nav.hidden { display: none; }
+
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; z-index: 99; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .confirm-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        .confirm-modal .modal { background: #1a2a4a; border-radius: 20px; padding: 24px; max-width: 300px; width: 100%; border: 1px solid rgba(255,255,255,0.06); text-align: center; }
+        .confirm-modal .modal h3 { color: #fff; font-size: 18px; margin-bottom: 8px; }
+        .confirm-modal .modal p { color: #5a6f95; font-size: 14px; margin-bottom: 16px; }
+        .confirm-modal .modal .btns { display: flex; gap: 10px; }
+        .confirm-modal .modal .btns button { flex: 1; padding: 10px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; }
+        .confirm-modal .modal .btns .no { background: rgba(255,255,255,0.05); color: #5a6f95; }
+        .confirm-modal .modal .btns .yes { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+
+        @media (max-width: 420px) { body { padding: 0; } .app { max-height: 100vh; border-radius: 0; } .content { padding: 0 12px 70px; } }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+<script>
+(function() {
+    const { useState, useEffect, useRef } = React;
+
+    // ============================================================
+    // 🔥 ТВОЙ SMARTLINK ADSTERRA
+    // ============================================================
+    const SMARTLINK = 'https://www.effectivecpmnetwork.com/wv99d2su?key=835fa928cfebf2435fd1337b93681f9d';
+
+    // ============================================================
+    // ТЕКУЩИЙ ПОЛЬЗОВАТЕЛЬ
+    // ============================================================
+    const CURRENT_USER = { id: 1, name: 'Алексей', nick: '@alex_play', avatar: 'А', points: 0, watched: 0 };
+
+    // ============================================================
+    // YOUTUBE
+    // ============================================================
+    async function getYouTubeTitle(url) {
+        const videoId = extractVideoId(url);
+        if (!videoId) return { title: 'Неизвестное видео', videoId: videoId };
+        try {
+            const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+            return { title: data.title, videoId: videoId, author: data.author_name };
+        } catch (e) {
+            try {
+                const response2 = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+                if (!response2.ok) throw new Error();
+                const data2 = await response2.json();
+                return { title: data2.title, videoId: videoId, author: data2.author_name };
+            } catch (e2) {
+                return { title: `Видео ${videoId}`, videoId: videoId };
+            }
+        }
+    }
+
+    function extractVideoId(url) {
+        const patterns = [
+            /(?:v=|\/)([a-zA-Z0-9_-]{11})/,
+            /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+            /embed\/([a-zA-Z0-9_-]{11})/
+        ];
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) return match[1];
+        }
+        return null;
+    }
+
+    // ============================================================
+    // ХРАНИЛИЩЕ
+    // ============================================================
+    const Storage = {
+        get(key, def) { try { const data = localStorage.getItem('watchspace_' + key); return data ? JSON.parse(data) : def; } catch { return def; } },
+        set(key, value) { try { localStorage.setItem('watchspace_' + key, JSON.stringify(value)); } catch {} }
+    };
+
+    const Toast = ({ message, onClose }) => {
+        useEffect(() => { const t = setTimeout(onClose, 2000); return () => clearTimeout(t); }, []);
+        return React.createElement('div', { className: 'toast' }, message);
+    };
+
+    const ConfirmModal = ({ message, onConfirm, onCancel }) => {
+        return React.createElement('div', { className: 'confirm-modal', onClick: (e) => e.target === e.currentTarget && onCancel() },
+            React.createElement('div', { className: 'modal' },
+                React.createElement('h3', null, '⚠️ Подтверждение'),
+                React.createElement('p', null, message),
+                React.createElement('div', { className: 'btns' },
+                    React.createElement('button', { className: 'no', onClick: onCancel }, 'Нет'),
+                    React.createElement('button', { className: 'yes', onClick: onConfirm }, 'Да')
+                )
+            )
+        );
+    };
+
+    // ============================================================
+    // КОМПОНЕНТ МОДАЛКИ СОЗДАНИЯ КОМНАТЫ
+    // ============================================================
+    const CreateRoomModal = ({ onClose, onCreate, name, setName, type, setType, password, setPassword }) => {
+        const nameRef = useRef(null);
+        const typeRef = useRef(null);
+        const passwordRef = useRef(null);
+
+        const handleNameBlur = () => { if (nameRef.current) setName(nameRef.current.value); };
+        const handleTypeChange = () => { if (typeRef.current) setType(typeRef.current.value); };
+        const handlePasswordBlur = () => { if (passwordRef.current) setPassword(passwordRef.current.value); };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                if (nameRef.current) setName(nameRef.current.value);
+                if (passwordRef.current) setPassword(passwordRef.current.value);
+                if (typeRef.current) setType(typeRef.current.value);
+                onCreate();
+            }
+        };
+
+        return React.createElement('div', { className: 'create-room-modal', onClick: (e) => e.target === e.currentTarget && onClose() },
+            React.createElement('div', { className: 'modal' },
+                React.createElement('h3', null, '🔵 Создать комнату'),
+                React.createElement('input', {
+                    ref: nameRef,
+                    type: 'text',
+                    placeholder: 'Название комнаты...',
+                    defaultValue: name,
+                    onBlur: handleNameBlur,
+                    onKeyDown: handleKeyDown,
+                    autoFocus: true
+                }),
+                React.createElement('select', {
+                    ref: typeRef,
+                    value: type,
+                    onChange: handleTypeChange,
+                    onBlur: handleTypeChange
+                },
+                    React.createElement('option', { value: 'open' }, '🟢 Открытая'),
+                    React.createElement('option', { value: 'closed' }, '🔒 Закрытая (с паролем)')
+                ),
+                type === 'closed' && React.createElement('input', {
+                    ref: passwordRef,
+                    type: 'password',
+                    placeholder: 'Пароль...',
+                    defaultValue: password,
+                    onBlur: handlePasswordBlur,
+                    onKeyDown: handleKeyDown
+                }),
+                React.createElement('div', { className: 'btns' },
+                    React.createElement('button', { className: 'cancel', onClick: onClose }, 'Отмена'),
+                    React.createElement('button', { 
+                        className: 'create', 
+                        onClick: () => {
+                            if (nameRef.current) setName(nameRef.current.value);
+                            if (passwordRef.current) setPassword(passwordRef.current.value);
+                            if (typeRef.current) setType(typeRef.current.value);
+                            onCreate();
+                        }
+                    }, 'Создать')
+                )
+            )
+        );
+    };
+
+    // ============================================================
+    // ГЛАВНОЕ ПРИЛОЖЕНИЕ
+    // ============================================================
+    const App = () => {
+        const [tab, setTab] = useState('home');
+        const [points, setPoints] = useState(0);
+        const [user, setUser] = useState(CURRENT_USER);
+        const [friends, setFriends] = useState([]);
+        const [friendRequests, setFriendRequests] = useState([]);
+        const [currentVideo, setCurrentVideo] = useState(null);
+        const [playlist, setPlaylist] = useState([]);
+        const [videoUrl, setVideoUrl] = useState('');
+        const [isLoading, setIsLoading] = useState(false);
+        const [toast, setToast] = useState(null);
+        const [showConfirm, setShowConfirm] = useState(null);
+
+        const [rooms, setRooms] = useState([]);
+        const [currentRoom, setCurrentRoom] = useState(null);
+        const [showCreateRoom, setShowCreateRoom] = useState(false);
+        const [newRoomName, setNewRoomName] = useState('');
+        const [newRoomType, setNewRoomType] = useState('open');
+        const [newRoomPassword, setNewRoomPassword] = useState('');
+        const [friendActivity, setFriendActivity] = useState([]);
+
+        const [giftHistory, setGiftHistory] = useState([]);
+        const [withdrawAmount, setWithdrawAmount] = useState('');
+
+        const [adCooldown, setAdCooldown] = useState(false);
+        const [adTimer, setAdTimer] = useState(0);
+
+        useEffect(() => {
+            Storage.set('playlist', playlist);
+            Storage.set('rooms', rooms);
+            Storage.set('friendActivity', friendActivity);
+            Storage.set('points', points);
+            Storage.set('giftHistory', giftHistory);
+            Storage.set('friends', friends);
+            Storage.set('friendRequests', friendRequests);
+            Storage.set('user', user);
+        }, [playlist, rooms, friendActivity, points, giftHistory, friends, friendRequests, user]);
+
+        // Таймер для рекламы (15 минут)
+        useEffect(() => {
+            const lastAd = Storage.get('lastAdTime', 0);
+            const now = Date.now();
+            const diff = (now - lastAd) / 1000 / 60;
+            if (diff < 15) {
+                setAdCooldown(true);
+                setAdTimer(Math.round(15 - diff));
+            } else {
+                setAdCooldown(false);
+                setAdTimer(0);
+            }
+
+            const interval = setInterval(() => {
+                const now2 = Date.now();
+                const lastAd2 = Storage.get('lastAdTime', 0);
+                const diff2 = (now2 - lastAd2) / 1000 / 60;
+                if (diff2 >= 15) {
+                    setAdCooldown(false);
+                    setAdTimer(0);
+                } else {
+                    setAdCooldown(true);
+                    setAdTimer(Math.round(15 - diff2));
+                }
+            }, 10000);
+            return () => clearInterval(interval);
+        }, []);
+
+        const addPoints = (amount) => {
+            const newPoints = points + amount;
+            setPoints(newPoints);
+            setUser(prev => ({ ...prev, points: newPoints }));
+        };
+
+        // ============================================================
+        // РЕКЛАМА (ADSTERRA SMARTLINK)
+        // ============================================================
+        const showAd = () => {
+            const lastAd = Storage.get('lastAdTime', 0);
+            const now = Date.now();
+            if (now - lastAd < 15 * 60 * 1000) {
+                const remaining = Math.round((15 * 60 * 1000 - (now - lastAd)) / 60000);
+                setToast(`⏳ Реклама будет доступна через ${remaining} мин`);
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+
+            // Открываем Smartlink в новой вкладке
+            window.open(SMARTLINK, '_blank');
+            Storage.set('lastAdTime', Date.now());
+            setAdCooldown(true);
+            setAdTimer(15);
+            
+            // Начисляем баллы
+            addPoints(2);
+            setToast('🎉 +2 балла за просмотр рекламы!');
+            setTimeout(() => setToast(null), 2000);
+        };
+
+        // ============================================================
+        // ДРУЗЬЯ
+        // ============================================================
+        const sendFriendRequest = (name) => {
+            if (!name.trim()) return;
+            if (friends.some(f => f.name === name.trim()) || friendRequests.some(f => f.name === name.trim())) {
+                setToast('❌ Пользователь уже в друзьях или заявка отправлена');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            if (name.trim() === user.name) {
+                setToast('❌ Нельзя добавить себя');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            const newRequest = {
+                id: Date.now(),
+                name: name.trim(),
+                avatar: name[0].toUpperCase(),
+                date: new Date().toLocaleDateString()
+            };
+            setFriendRequests([...friendRequests, newRequest]);
+            setToast(`📨 Заявка отправлена ${name}`);
+            setTimeout(() => setToast(null), 2000);
+        };
+
+        const acceptFriend = (id) => {
+            const request = friendRequests.find(r => r.id === id);
+            if (!request) return;
+            const newFriend = {
+                id: request.id,
+                name: request.name,
+                avatar: request.avatar,
+                online: true,
+                points: 0
+            };
+            setFriends([...friends, newFriend]);
+            setFriendRequests(friendRequests.filter(r => r.id !== id));
+            setToast(`👥 ${request.name} теперь ваш друг!`);
+            setTimeout(() => setToast(null), 2000);
+            addPoints(20);
+        };
+
+        const rejectFriend = (id) => {
+            const request = friendRequests.find(r => r.id === id);
+            setFriendRequests(friendRequests.filter(r => r.id !== id));
+            if (request) {
+                setToast(`❌ Заявка от ${request.name} отклонена`);
+                setTimeout(() => setToast(null), 2000);
+            }
+        };
+
+        const removeFriend = (id) => {
+            const friend = friends.find(f => f.id === id);
+            setFriends(friends.filter(f => f.id !== id));
+            if (friend) {
+                setToast(`👤 ${friend.name} удалён из друзей`);
+                setTimeout(() => setToast(null), 2000);
+            }
+        };
+
+        // ============================================================
+        // ВИДЕО
+        // ============================================================
+        const addVideoByUrl = async () => {
+            if (!videoUrl.trim()) {
+                setToast('❌ Введите ссылку YouTube');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            setIsLoading(true);
+            try {
+                const info = await getYouTubeTitle(videoUrl);
+                if (!info.videoId) {
+                    setToast('❌ Не удалось распознать ссылку');
+                    setTimeout(() => setToast(null), 2000);
+                    return;
+                }
+                const newVideo = {
+                    id: Date.now(),
+                    videoId: info.videoId,
+                    title: info.title || 'Видео без названия',
+                    author: info.author || 'YouTube',
+                    duration: '?'
+                };
+                setPlaylist([...playlist, newVideo]);
+                if (!currentVideo) setCurrentVideo(newVideo);
+                setVideoUrl('');
+                setToast(`✅ Добавлено: ${newVideo.title}`);
+                setTimeout(() => setToast(null), 2000);
+                setUser(prev => ({ ...prev, watched: (prev.watched || 0) + 1 }));
+            } catch (error) {
+                setToast('❌ Ошибка при добавлении');
+                setTimeout(() => setToast(null), 2000);
+            }
+            setIsLoading(false);
+        };
+
+        const playVideo = (video) => {
+            setCurrentVideo(video);
+        };
+
+        const handleBack = () => { setCurrentVideo(null); setCurrentRoom(null); };
+
+        const removeVideo = (videoId) => {
+            const newPlaylist = playlist.filter(v => v.id !== videoId);
+            setPlaylist(newPlaylist);
+            if (currentVideo && currentVideo.id === videoId) {
+                setCurrentVideo(newPlaylist.length > 0 ? newPlaylist[0] : null);
+            }
+        };
+
+        const clearPlaylist = () => {
+            setPlaylist([]);
+            setCurrentVideo(null);
+        };
+
+        const openYouTube = () => { window.open('https://www.youtube.com', '_blank'); };
+
+        // ============================================================
+        // КОМНАТЫ
+        // ============================================================
+        const createRoom = () => {
+            if (!newRoomName.trim()) {
+                setToast('❌ Введите название комнаты');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            if (newRoomType === 'closed' && !newRoomPassword.trim()) {
+                setToast('❌ Введите пароль для закрытой комнаты');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            const newRoom = {
+                id: Date.now(),
+                name: newRoomName.trim(),
+                type: newRoomType,
+                password: newRoomPassword.trim(),
+                creator: user.name,
+                members: [user.name],
+                online: [user.name],
+                chat: [],
+                currentVideo: null
+            };
+            const updatedRooms = [...rooms, newRoom];
+            setRooms(updatedRooms);
+            setShowCreateRoom(false);
+            setNewRoomName('');
+            setNewRoomPassword('');
+            setCurrentRoom(newRoom);
+            setToast('✅ Комната создана!');
+            setTimeout(() => setToast(null), 2000);
+        };
+
+        const joinRoom = (roomId, password) => {
+            const room = rooms.find(r => r.id === roomId);
+            if (!room) return;
+            if (room.type === 'closed' && room.password !== password) {
+                setToast('❌ Неверный пароль');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            if (!room.members.includes(user.name)) {
+                const updated = rooms.map(r => {
+                    if (r.id === roomId) {
+                        return { ...r, members: [...r.members, user.name], online: [...r.online, user.name] };
+                    }
+                    return r;
+                });
+                setRooms(updated);
+                setCurrentRoom(room);
+                setToast(`✅ Вы вошли в "${room.name}"`);
+                setTimeout(() => setToast(null), 2000);
+            } else {
+                setCurrentRoom(room);
+                setToast(`✅ Вы вошли в "${room.name}"`);
+                setTimeout(() => setToast(null), 2000);
+            }
+        };
+
+        const leaveRoom = (roomId) => {
+            const room = rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            if (room.creator === user.name) {
+                setShowConfirm({
+                    message: 'Вы создатель комнаты. При выходе комната будет удалена. Продолжить?',
+                    onConfirm: () => {
+                        const updated = rooms.filter(r => r.id !== roomId);
+                        setRooms(updated);
+                        setCurrentRoom(null);
+                        setShowConfirm(null);
+                        setToast('🗑 Комната удалена');
+                        setTimeout(() => setToast(null), 2000);
+                    },
+                    onCancel: () => setShowConfirm(null)
+                });
+                return;
+            }
+
+            const updated = rooms.map(r => {
+                if (r.id === roomId) {
+                    return { ...r, members: r.members.filter(m => m !== user.name), online: r.online.filter(m => m !== user.name) };
+                }
+                return r;
+            });
+            setRooms(updated);
+            setCurrentRoom(null);
+            setToast('👋 Вы вышли из комнаты');
+            setTimeout(() => setToast(null), 2000);
+        };
+
+        const inviteToRoom = (roomName) => {
+            navigator.clipboard?.writeText(`Приглашение в комнату "${roomName}"`);
+            setToast('🔗 Ссылка скопирована!');
+            setTimeout(() => setToast(null), 2000);
+        };
+
+        const sendMessage = (roomId, text) => {
+            if (!text.trim()) return;
+            const updated = rooms.map(r => {
+                if (r.id === roomId) {
+                    return { ...r, chat: [...r.chat, { user: user.name, text: text.trim(), time: new Date().toLocaleTimeString() }] };
+                }
+                return r;
+            });
+            setRooms(updated);
+        };
+
+        const addVideoToRoom = async (roomId, url) => {
+            if (!url.trim()) return;
+            const info = await getYouTubeTitle(url);
+            if (!info.videoId) {
+                setToast('❌ Не удалось распознать ссылку');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            const newVideo = { id: Date.now(), videoId: info.videoId, title: info.title, author: info.author };
+            const updated = rooms.map(r => {
+                if (r.id === roomId) {
+                    return { ...r, currentVideo: newVideo };
+                }
+                return r;
+            });
+            setRooms(updated);
+            const room = updated.find(r => r.id === roomId);
+            if (room) setCurrentRoom(room);
+            setToast(`✅ Видео добавлено в комнату!`);
+            setTimeout(() => setToast(null), 2000);
+        };
+
+        // ============================================================
+        // ПОДАРКИ
+        // ============================================================
+        const sendGift = (friendId, giftName, giftCost) => {
+            if (points < giftCost) {
+                setToast('❌ Недостаточно баллов');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            const friend = friends.find(f => f.id === friendId);
+            if (!friend) {
+                setToast('❌ Друг не найден');
+                setTimeout(() => setToast(null), 2000);
+                return;
+            }
+            addPoints(-giftCost);
+            setGiftHistory([...giftHistory, {
+                id: Date.now(),
+                to: friend.name,
+                gift: giftName,
+                cost: giftCost,
+                date: new Date().toLocaleDateString()
+            }]);
+            setToast(`🎁 Подарок "${giftName}" отправлен ${friend.name}!`);
+            setTimeout(() => setToast(null), 2000);
+        };
+
+        // ============================================================
+        // СТРАНИЦЫ
+        // ============================================================
+        const HomePage = () => {
+            const activeRooms = rooms.filter(r => r.members && r.members.length > 0);
+
+            return React.createElement('div', null,
+                // КНОПКА РЕКЛАМЫ
+                React.createElement('button', { 
+                    className: 'ad-btn-full',
+                    onClick: showAd,
+                    disabled: adCooldown
+                },
+                    React.createElement('span', null, '⭐'),
+                    React.createElement('span', null, adCooldown ? `Реклама через ${adTimer} мин` : 'Смотреть рекламу (+2 балла)')
+                ),
+
+                React.createElement('div', { className: 'input-row' },
+                    React.createElement('input', {
+                        type: 'text',
+                        placeholder: 'Вставьте ссылку YouTube...',
+                        value: videoUrl,
+                        onChange: (e) => setVideoUrl(e.target.value),
+                        onKeyPress: (e) => e.key === 'Enter' && addVideoByUrl(),
+                        disabled: isLoading
+                    }),
+                    React.createElement('button', { 
+                        className: 'btn-add',
+                        onClick: addVideoByUrl,
+                        disabled: isLoading
+                    }, isLoading ? '⏳' : '➕')
+                ),
+                React.createElement('div', { className: 'btn-row' },
+                    React.createElement('button', { className: 'btn btn-youtube', onClick: openYouTube }, '▶️ Искать на YouTube'),
+                    React.createElement('button', { className: 'btn btn-create', onClick: () => setShowCreateRoom(true) }, '➕ Создать комнату'),
+                    playlist.length > 0 && React.createElement('button', { className: 'btn btn-clear', onClick: clearPlaylist }, '🗑 Очистить')
+                ),
+
+                playlist.length > 0 && React.createElement('div', { className: 'playlist' },
+                    React.createElement('div', { className: 'title' }, `📋 Плейлист (${playlist.length})`),
+                    playlist.map((video, index) => 
+                        React.createElement('div', { 
+                            key: video.id,
+                            className: `playlist-item${currentVideo && currentVideo.id === video.id ? ' active' : ''}`,
+                            onClick: () => playVideo(video)
+                        },
+                            React.createElement('div', { className: 'num' }, index + 1),
+                            React.createElement('div', { className: 'info' },
+                                React.createElement('h4', null, video.title || 'Без названия'),
+                                React.createElement('div', { className: 'meta' }, video.author || 'YouTube')
+                            ),
+                            React.createElement('button', { 
+                                className: 'remove-btn',
+                                onClick: (e) => { e.stopPropagation(); removeVideo(video.id); }
+                            }, '✕')
+                        )
+                    )
+                ),
+
+                React.createElement('div', { className: 'section' },
+                    React.createElement('div', { className: 'section-title' },
+                        '👥 Смотрели друзья',
+                        React.createElement('span', { className: 'see-all' }, 'Все →')
+                    ),
+                    friendActivity.length === 0 ?
+                        React.createElement('div', { className: 'empty-state' },
+                            React.createElement('div', { className: 'icon' }, '👀'),
+                            React.createElement('h4', null, 'Пока никто ничего не смотрел'),
+                            React.createElement('p', null, 'Друзья появятся здесь, когда начнут смотреть видео')
+                        ) :
+                        React.createElement('div', { className: 'activity-grid' },
+                            friendActivity.map((item, i) =>
+                                React.createElement(VideoCard, {
+                                    key: i,
+                                    video: item.video,
+                                    onWatch: playVideo,
+                                    watchedBy: item.watchedBy
+                                })
+                            )
+                        )
+                ),
+
+                React.createElement('div', { className: 'section' },
+                    React.createElement('div', { className: 'section-title' },
+                        '🔵 Комнаты',
+                        React.createElement('span', { className: 'see-all' }, `${activeRooms.length} комнат`)
+                    ),
+                    activeRooms.length === 0 ?
+                        React.createElement('div', { className: 'empty-state' },
+                            React.createElement('div', { className: 'icon' }, '🔵'),
+                            React.createElement('h4', null, 'Нет активных комнат'),
+                            React.createElement('p', null, 'Создайте свою первую комнату!')
+                        ) :
+                        activeRooms.map(room =>
+                            React.createElement(RoomCard, {
+                                key: room.id,
+                                room: room,
+                                onJoin: () => {
+                                    if (room.type === 'closed') {
+                                        const pwd = prompt('Введите пароль:');
+                                        if (pwd !== null) joinRoom(room.id, pwd);
+                                    } else {
+                                        joinRoom(room.id, '');
+                                    }
+                                },
+                                onInvite: () => inviteToRoom(room.name),
+                                onEnter: () => {
+                                    if (room.members.includes(user.name)) {
+                                        setCurrentRoom(room);
+                                    } else {
+                                        if (room.type === 'closed') {
+                                            const pwd = prompt('Введите пароль:');
+                                            if (pwd !== null) joinRoom(room.id, pwd);
+                                        } else {
+                                            joinRoom(room.id, '');
+                                        }
+                                    }
+                                }
+                            })
+                        )
+                ),
+
+                showCreateRoom && React.createElement(CreateRoomModal, {
+                    onClose: () => setShowCreateRoom(false),
+                    onCreate: createRoom,
+                    name: newRoomName,
+                    setName: setNewRoomName,
+                    type: newRoomType,
+                    setType: setNewRoomType,
+                    password: newRoomPassword,
+                    setPassword: setNewRoomPassword
+                })
+            );
+        };
+
+        const RoomCard = ({ room, onJoin, onInvite, onEnter }) => {
+            const isMember = room.members && room.members.includes(user.name);
+
+            return React.createElement('div', { className: 'room-card' },
+                React.createElement('div', { className: 'top' },
+                    React.createElement('span', { className: 'name' }, room.name),
+                    React.createElement('span', { className: `badge ${room.type}` },
+                        room.type === 'open' ? '🟢 Открытая' : '🔒 Закрытая'
+                    )
+                ),
+                React.createElement('div', { className: 'members' },
+                    room.members && room.members.map((m, i) =>
+                        React.createElement('div', { 
+                            key: i, 
+                            className: `member${room.online && room.online.includes(m) ? ' online' : ''}${m === room.creator ? ' creator' : ''}` 
+                        }, m[0])
+                    )
+                ),
+                React.createElement('div', { className: 'actions' },
+                    isMember ?
+                        React.createElement('button', { className: 'enter', onClick: onEnter }, '▶ Войти') :
+                        React.createElement('button', { className: 'join', onClick: onJoin }, 'Войти'),
+                    React.createElement('button', { className: 'invite', onClick: onInvite }, 'Пригласить')
+                )
+            );
+        };
+
+        const VideoCard = ({ video, onWatch, watchedBy }) => {
+            return React.createElement('div', { className: 'activity-card', onClick: () => onWatch(video) },
+                React.createElement('div', { className: 'thumb' },
+                    React.createElement('span', { style: { fontSize: '28px' } }, '▶️'),
+                    React.createElement('div', { className: 'duration' }, video.duration || '?')
+                ),
+                React.createElement('div', { className: 'info' },
+                    React.createElement('h4', null, video.title || 'Без названия'),
+                    watchedBy && React.createElement('div', { className: 'watched-by' },
+                        React.createElement('div', { className: 'avatars' },
+                            watchedBy.slice(0, 3).map((f, i) =>
+                                React.createElement('div', { key: i, className: 'av' }, f[0])
+                            )
+                        ),
+                        React.createElement('span', { className: 'text' },
+                            watchedBy.length === 1 ? `Смотрел ${watchedBy[0]}` :
+                            watchedBy.length <= 3 ? `Смотрели ${watchedBy.join(', ')}` :
+                            `${watchedBy.slice(0, 3).join(', ')} и ещё ${watchedBy.length - 3}`
+                        )
+                    )
+                )
+            );
+        };
+
+        // ============================================================
+        // СТРАНИЦА: ДРУЗЬЯ
+        // ============================================================
+        const FriendsPage = () => {
+            const [newFriendName, setNewFriendName] = useState('');
+            const [toastFriend, setToastFriend] = useState(null);
+
+            const handleSendRequest = () => {
+                if (!newFriendName.trim()) {
+                    setToastFriend('❌ Введите ник друга');
+                    setTimeout(() => setToastFriend(null), 2000);
+                    return;
+                }
+                sendFriendRequest(newFriendName);
+                setNewFriendName('');
+            };
+
+            const inviteFriend = () => {
+                const link = 'https://t.me/WatchSpaceBot?start=ref_' + Date.now();
+                navigator.clipboard?.writeText(link);
+                setToastFriend('🔗 Ссылка скопирована!');
+                setTimeout(() => setToastFriend(null), 2000);
+            };
+
+            return React.createElement('div', null,
+                friendRequests.length > 0 && React.createElement('div', { className: 'friend-requests' },
+                    React.createElement('div', { className: 'title' }, '📨 Заявки в друзья'),
+                    friendRequests.map(req =>
+                        React.createElement('div', { key: req.id, className: 'friend-request-item' },
+                            React.createElement('div', { className: 'avatar' }, req.avatar),
+                            React.createElement('div', { className: 'name' }, req.name),
+                            React.createElement('div', { className: 'btns' },
+                                React.createElement('button', { className: 'accept', onClick: () => acceptFriend(req.id) }, '✅'),
+                                React.createElement('button', { className: 'reject', onClick: () => rejectFriend(req.id) }, '✕')
+                            )
+                        )
+                    )
+                ),
+                React.createElement('div', { className: 'input-row' },
+                    React.createElement('input', {
+                        type: 'text',
+                        placeholder: 'Введите ник друга...',
+                        value: newFriendName,
+                        onChange: (e) => setNewFriendName(e.target.value),
+                        onKeyPress: (e) => e.key === 'Enter' && handleSendRequest()
+                    }),
+                    React.createElement('button', { className: 'btn-add', onClick: handleSendRequest }, '➕ Отправить')
+                ),
+                React.createElement('button', { 
+                    style: { width: '100%', padding: '12px', background: 'linear-gradient(135deg, #4a7cf7, #6c5ce7)', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '600', fontSize: '14px', cursor: 'pointer', marginBottom: '12px' },
+                    onClick: inviteFriend
+                }, '🔗 Пригласить друга (+20 баллов)'),
+                friends.length === 0 ?
+                    React.createElement('div', { className: 'empty-state' },
+                        React.createElement('div', { className: 'icon' }, '👥'),
+                        React.createElement('h4', null, 'Нет друзей'),
+                        React.createElement('p', null, 'Отправьте заявку или пригласите друга по ссылке')
+                    ) :
+                    React.createElement('div', { className: 'friends-list' },
+                        friends.map(friend =>
+                            React.createElement('div', { key: friend.id, className: 'friend-item' },
+                                React.createElement('div', { className: 'avatar' },
+                                    friend.avatar,
+                                    React.createElement('div', { className: friend.online ? 'online' : 'offline' })
+                                ),
+                                React.createElement('div', { className: 'info' },
+                                    React.createElement('div', { className: 'name' }, friend.name),
+                                    React.createElement('div', { className: 'status' },
+                                        friend.online ? '🟢 В сети' : '⚪ Не в сети'
+                                    )
+                                ),
+                                React.createElement('button', { 
+                                    style: { background: 'rgba(255,255,255,0.05)', border: 'none', color: '#5a6f95', padding: '4px 12px', borderRadius: '30px', cursor: 'pointer', fontSize: '12px' },
+                                    onClick: () => removeFriend(friend.id)
+                                }, '✕')
+                            )
+                        )
+                    ),
+                toastFriend && React.createElement(Toast, { message: toastFriend, onClose: () => setToastFriend(null) })
+            );
+        };
+
+        // ============================================================
+        // СТРАНИЦА: ИГРЫ
+        // ============================================================
+        const GamesPage = () => {
+            return React.createElement('div', { className: 'games-soon' },
+                React.createElement('div', { className: 'icon' }, '🎮'),
+                React.createElement('h3', null, 'Скоро появятся игры!'),
+                React.createElement('p', null, 'Мы работаем над этим. Следите за обновлениями! 🚀')
+            );
+        };
+
+        // ============================================================
+        // СТРАНИЦА: ПОДАРКИ
+        // ============================================================
+        const GiftsPage = () => {
+            const [toastGift, setToastGift] = useState(null);
+
+            const gifts = [
+                { name: '🌹 Роза', cost: 10 },
+                { name: '🎂 Торт', cost: 25 },
+                { name: '🎁 Подарок', cost: 50 },
+                { name: '💎 Алмаз', cost: 100 },
+                { name: '🌟 Звезда', cost: 200 },
+                { name: '👑 Корона', cost: 500 },
+            ];
+
+            const handleSendGift = (friendId, giftName, cost) => {
+                if (friends.length === 0) {
+                    setToastGift('❌ Добавьте сначала друга');
+                    setTimeout(() => setToastGift(null), 2000);
+                    return;
+                }
+                sendGift(friendId, giftName, cost);
+            };
+
+            return React.createElement('div', null,
+                React.createElement('div', { className: 'section' },
+                    React.createElement('div', { className: 'section-title' },
+                        '🎁 Подарки',
+                        React.createElement('span', { className: 'see-all' }, `${giftHistory.length} отправлено`)
+                    ),
+                    React.createElement('div', { className: 'gifts-grid' },
+                        gifts.map((g, i) =>
+                            React.createElement('div', { key: i, className: 'gift-card' },
+                                React.createElement('div', { className: 'icon' }, g.name.split(' ')[0]),
+                                React.createElement('div', { className: 'name' }, g.name.split(' ').slice(1).join(' ') || g.name),
+                                React.createElement('div', { className: 'price' }, `${g.cost}⭐`),
+                                friends.length > 0 ?
+                                    React.createElement('select', {
+                                        style: { marginTop: '4px', padding: '4px 8px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: '11px', outline: 'none', width: '100%' },
+                                        onChange: (e) => handleSendGift(parseInt(e.target.value), g.name, g.cost)
+                                    },
+                                        React.createElement('option', { value: '' }, 'Кому'),
+                                        friends.map(f =>
+                                            React.createElement('option', { key: f.id, value: f.id }, f.name)
+                                        )
+                                    ) :
+                                    React.createElement('button', {
+                                        className: 'btn-gift',
+                                        style: { marginTop: '6px', background: 'rgba(255,255,255,0.05)', color: '#5a6f95' },
+                                        onClick: () => setToastGift('❌ Добавьте друга в разделе "Друзья"')
+                                    }, 'Нет друзей')
+                            )
+                        )
+                    )
+                ),
+                giftHistory.length > 0 && React.createElement('div', { className: 'section' },
+                    React.createElement('div', { className: 'section-title' },
+                        '📜 История подарков',
+                        React.createElement('span', { className: 'see-all' }, 'Все →')
+                    ),
+                    giftHistory.slice(0, 5).map(g =>
+                        React.createElement('div', { key: g.id, style: { background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '10px', marginBottom: '4px', border: '1px solid rgba(255,255,255,0.03)' } },
+                            React.createElement('div', { style: { color: '#e0e8f8', fontSize: '13px' } }, `${g.gift} → ${g.to}`),
+                            React.createElement('div', { style: { color: '#5a6f95', fontSize: '11px' } }, `${g.cost}⭐ · ${g.date}`)
+                        )
+                    )
+                ),
+                toastGift && React.createElement(Toast, { message: toastGift, onClose: () => setToastGift(null) })
+            );
+        };
+
+        // ============================================================
+        // СТРАНИЦА: ПРОФИЛЬ
+        // ============================================================
+        const ProfilePage = () => {
+            const [toastProfile, setToastProfile] = useState(null);
+
+            const dailyBonus = () => {
+                const lastClaim = Storage.get('daily_bonus', 0);
+                const today = new Date().toDateString();
+                if (lastClaim === today) {
+                    setToastProfile('✅ Бонус уже получен сегодня!');
+                    setTimeout(() => setToastProfile(null), 2000);
+                    return;
+                }
+                const bonus = Math.floor(Math.random() * 10) + 5;
+                addPoints(bonus);
+                Storage.set('daily_bonus', today);
+                setToastProfile(`🎉 +${bonus} баллов!`);
+                setTimeout(() => setToastProfile(null), 2000);
+            };
+
+            const level = Math.floor(points / 100) + 1;
+
+            return React.createElement('div', null,
+                React.createElement('div', { className: 'profile-card' },
+                    React.createElement('div', { className: 'avatar' }, user.avatar),
+                    React.createElement('div', { className: 'info' },
+                        React.createElement('h3', null,
+                            user.name,
+                            React.createElement('span', { className: 'nick' }, user.nick || '@user')
+                        ),
+                        React.createElement('p', null, `⭐ ${points} баллов · ${friends.length} друзей`)
+                    ),
+                    React.createElement('div', { className: 'level' }, `LVL ${level}`)
+                ),
+                React.createElement('div', { className: 'stats-grid' },
+                    React.createElement('div', { className: 'stat' },
+                        React.createElement('div', { className: 'num' }, user.watched || 0),
+                        React.createElement('span', { className: 'label' }, '🎬 Просмотров')
+                    ),
+                    React.createElement('div', { className: 'stat' },
+                        React.createElement('div', { className: 'num' }, friends.filter(f => f.online).length),
+                        React.createElement('span', { className: 'label' }, '👥 Онлайн')
+                    ),
+                    React.createElement('div', { className: 'stat' },
+                        React.createElement('div', { className: 'num' }, points),
+                        React.createElement('span', { className: 'label' }, '⭐ Баллов')
+                    )
+                ),
+                React.createElement('div', { className: 'withdraw-section' },
+                    React.createElement('div', { className: 'disabled-overlay' },
+                        React.createElement('div', { className: 'soon-text' }, '⏳ Скоро будет доступно'),
+                        React.createElement('div', { className: 'soon-sub' }, 'Мы работаем над системой вывода')
+                    ),
+                    React.createElement('div', { style: { opacity: 0.3, pointerEvents: 'none' } },
+                        React.createElement('div', null,
+                            React.createElement('span', { style: { color: '#fff', fontSize: '16px', fontWeight: '600' } }, '💰 Вывод средств'),
+                            React.createElement('span', { className: 'soon-badge' }, 'Скоро')
+                        ),
+                        React.createElement('div', { className: 'balance' },
+                            points,
+                            React.createElement('small', null, ' ⭐ баллов')
+                        ),
+                        React.createElement('div', { className: 'min-amount' }, 'Минимум 50 баллов'),
+                        React.createElement('div', { className: 'input-row' },
+                            React.createElement('input', {
+                                type: 'number',
+                                placeholder: 'Сумма баллов...',
+                                value: withdrawAmount,
+                                onChange: (e) => setWithdrawAmount(e.target.value),
+                                disabled: true
+                            }),
+                            React.createElement('button', { 
+                                style: { background: 'rgba(255,255,255,0.05)', color: '#5a6f95', cursor: 'default' }
+                            }, 'Вывести')
+                        )
+                    )
+                ),
+                React.createElement('button', { 
+                    style: { width: '100%', padding: '12px', background: 'linear-gradient(135deg, #ffd700, #f0c000)', border: 'none', borderRadius: '14px', color: '#0a0e1a', fontWeight: '700', fontSize: '14px', cursor: 'pointer' },
+                    onClick: dailyBonus
+                }, '📅 Ежедневный бонус'),
+                toastProfile && React.createElement(Toast, { message: toastProfile, onClose: () => setToastProfile(null) })
+            );
+        };
+
+        // ============================================================
+        // ВНУТРИ КОМНАТЫ
+        // ============================================================
+        const RoomInside = ({ room, onLeave, onAddVideo }) => {
+            const [msg, setMsg] = useState('');
+            const [roomVideoUrl, setRoomVideoUrl] = useState('');
+            const isCreator = room.creator === user.name;
+            const currentRoomData = rooms.find(r => r.id === room.id) || room;
+
+            const handleSend = () => {
+                if (!msg.trim()) return;
+                sendMessage(room.id, msg);
+                setMsg('');
+            };
+
+            const handleAddVideo = () => {
+                if (!roomVideoUrl.trim()) return;
+                onAddVideo(room.id, roomVideoUrl);
+                setRoomVideoUrl('');
+            };
+
+            return React.createElement('div', { className: 'room-inside' },
+                React.createElement('button', { className: 'back', onClick: () => onLeave(room.id) }, '← Выйти'),
+                React.createElement('div', { className: 'room-header' },
+                    React.createElement('h2', null, '🔵', currentRoomData.name, isCreator && ' 👑'),
+                    React.createElement('span', { className: 'online-count' }, `${currentRoomData.online ? currentRoomData.online.length : 0} онлайн`)
+                ),
+                React.createElement('div', { className: 'member-list' },
+                    currentRoomData.members && currentRoomData.members.map((m, i) =>
+                        React.createElement('div', { key: i, className: 'm' },
+                            React.createElement('div', { className: `av${currentRoomData.online && currentRoomData.online.includes(m) ? ' online' : ''}${m === currentRoomData.creator ? ' creator' : ''}` }, m[0]),
+                            React.createElement('span', { className: 'name' }, m, m === currentRoomData.creator && React.createElement('span', { className: 'crown' }, ' 👑'))
+                        )
+                    )
+                ),
+                React.createElement('div', { className: 'player-wrapper' },
+                    currentRoomData.currentVideo ?
+                        React.createElement('iframe', {
+                            src: `https://www.youtube.com/embed/${currentRoomData.currentVideo.videoId}?autoplay=1&rel=0`,
+                            allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                            allowFullScreen: true,
+                            title: currentRoomData.currentVideo.title
+                        }) :
+                        React.createElement('div', { className: 'placeholder' },
+                            React.createElement('div', { className: 'big-icon' }, '🎬'),
+                            React.createElement('h4', null, isCreator ? 'Добавьте видео в комнату' : 'Создатель ещё не добавил видео'),
+                            isCreator && React.createElement('p', null, 'Вставьте ссылку YouTube ниже')
+                        )
+                ),
+                isCreator && React.createElement('div', { className: 'input-row' },
+                    React.createElement('input', {
+                        type: 'text',
+                        placeholder: 'Вставьте ссылку YouTube для комнаты...',
+                        value: roomVideoUrl,
+                        onChange: (e) => setRoomVideoUrl(e.target.value),
+                        onKeyPress: (e) => e.key === 'Enter' && handleAddVideo()
+                    }),
+                    React.createElement('button', { className: 'btn-add', onClick: handleAddVideo }, '➕')
+                ),
+                React.createElement('div', { className: 'chat-area' },
+                    currentRoomData.chat && currentRoomData.chat.length === 0 ?
+                        React.createElement('div', { style: { color: '#5a6f95', textAlign: 'center', padding: '8px' } },
+                            'Пока нет сообщений'
+                        ) :
+                        currentRoomData.chat && currentRoomData.chat.map((msg, i) =>
+                            React.createElement('div', { key: i, className: 'msg' },
+                                React.createElement('span', { className: 'user' }, msg.user),
+                                React.createElement('span', { className: 'text' }, msg.text),
+                                React.createElement('span', { className: 'time' }, msg.time)
+                            )
+                        )
+                ),
+                React.createElement('div', { className: 'chat-input' },
+                    React.createElement('input', {
+                        type: 'text',
+                        placeholder: 'Написать в чат...',
+                        value: msg,
+                        onChange: (e) => setMsg(e.target.value),
+                        onKeyPress: (e) => e.key === 'Enter' && handleSend()
+                    }),
+                    React.createElement('button', { onClick: handleSend }, '➤')
+                )
+            );
+        };
+
+        // ============================================================
+        // РЕНДЕР
+        // ============================================================
+        const renderContent = () => {
+            if (currentVideo) {
+                return React.createElement('div', null,
+                    React.createElement('button', { className: 'back', onClick: handleBack }, '← Назад'),
+                    React.createElement('div', { className: 'player-wrapper' },
+                        React.createElement('iframe', {
+                            src: `https://www.youtube.com/embed/${currentVideo.videoId}?autoplay=1&rel=0`,
+                            allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                            allowFullScreen: true,
+                            title: currentVideo.title
+                        })
+                    ),
+                    React.createElement('div', { className: 'video-title' }, currentVideo.title || 'Без названия'),
+                    React.createElement('div', { className: 'video-meta' }, `📺 ${currentVideo.author || 'YouTube'}`)
+                );
+            }
+
+            if (currentRoom) {
+                return React.createElement(RoomInside, {
+                    room: currentRoom,
+                    onLeave: leaveRoom,
+                    onAddVideo: addVideoToRoom
+                });
+            }
+
+            switch(tab) {
+                case 'home': return React.createElement(HomePage);
+                case 'friends': return React.createElement(FriendsPage);
+                case 'gifts': return React.createElement(GiftsPage);
+                case 'games': return React.createElement(GamesPage);
+                case 'profile': return React.createElement(ProfilePage);
+                default: return React.createElement(HomePage);
+            }
+        };
+
+        const HomeIcon = () => React.createElement('svg', { viewBox: '0 0 24 24', width: '24', height: '24', style: { fill: 'currentColor' } },
+            React.createElement('path', { d: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' }));
+
+        const FriendsIcon = () => React.createElement('svg', { viewBox: '0 0 24 24', width: '24', height: '24', style: { fill: 'currentColor' } },
+            React.createElement('path', { d: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z' }));
+
+        const GiftsIcon = () => React.createElement('svg', { viewBox: '0 0 24 24', width: '24', height: '24', style: { fill: 'currentColor' } },
+            React.createElement('path', { d: 'M20 6h-2v2h-2V6h-2V4h2V2h2v2h2v2zm-10 2H8V6H6v2H4V4h2v2h2V4h2v4zm-4 4h4v8H6v-8zm10 0h4v8h-4v-8zm-4 0h4v8h-4v-8z' }));
+
+        const GamesIcon = () => React.createElement('svg', { viewBox: '0 0 24 24', width: '24', height: '24', style: { fill: 'currentColor' } },
+            React.createElement('path', { d: 'M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z' }));
+
+        const ProfileIcon = () => React.createElement('svg', { viewBox: '0 0 24 24', width: '24', height: '24', style: { fill: 'currentColor' } },
+            React.createElement('path', { d: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' }));
+
+        const NavItem = ({ tabId, icon, label, badge, isActive }) => {
+            const IconComponent = icon;
+            return React.createElement('button', {
+                className: `nav-item${isActive ? ' active' : ''}`,
+                onClick: () => { setTab(tabId); setCurrentVideo(null); }
+            },
+                React.createElement('div', { className: 'icon-wrap' },
+                    React.createElement(IconComponent, { className: 'svg-icon' }),
+                    badge && React.createElement('span', { className: 'badge' }, badge)
+                ),
+                React.createElement('span', { className: 'label' }, label)
+            );
+        };
+
+        const onlineCount = friends.filter(f => f.online).length;
+        const isInRoom = currentRoom !== null;
+        const requestsCount = friendRequests.length;
+
+        return React.createElement('div', { className: 'app' },
+            React.createElement('div', { className: 'header' },
+                React.createElement('div', { className: 'logo' },
+                    React.createElement('div', { className: 'icon' }, '▶'),
+                    React.createElement('span', null, 'WatchSpace')
+                ),
+                React.createElement('div', { className: 'points' }, '⭐', points)
+            ),
+            React.createElement('div', { className: 'content' }, renderContent()),
+            !isInRoom && React.createElement('div', { className: 'bottom-nav' },
+                React.createElement(NavItem, { tabId: 'home', icon: HomeIcon, label: 'Главная', isActive: tab === 'home' }),
+                React.createElement(NavItem, { tabId: 'friends', icon: FriendsIcon, label: 'Друзья', badge: requestsCount > 0 ? requestsCount : null, isActive: tab === 'friends' }),
+                React.createElement(NavItem, { tabId: 'gifts', icon: GiftsIcon, label: 'Подарки', isActive: tab === 'gifts' }),
+                React.createElement(NavItem, { tabId: 'games', icon: GamesIcon, label: 'Игры', isActive: tab === 'games' }),
+                React.createElement(NavItem, { tabId: 'profile', icon: ProfileIcon, label: 'Профиль', isActive: tab === 'profile' })
+            ),
+            toast && React.createElement(Toast, { message: toast, onClose: () => setToast(null) }),
+            showConfirm && React.createElement(ConfirmModal, {
+                message: showConfirm.message,
+                onConfirm: showConfirm.onConfirm,
+                onCancel: showConfirm.onCancel
+            })
+        );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+})();
+</script>
+</body>
+</html>
